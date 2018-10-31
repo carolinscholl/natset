@@ -2,6 +2,7 @@
 #include <stdlib.h>	 
 
 
+// initialise a set
 ns_status_t ns_init(natset_t *set, unsigned int largest){
 
 	unsigned int size = largest/8 +1; 
@@ -18,11 +19,10 @@ ns_status_t ns_init(natset_t *set, unsigned int largest){
 	// calloc returns pointer to allocated memory. If unsuccessful it returns NULL
 	if(set->bitarray == NULL) return NSS_ERROR; 
 	else return NSS_OK; 			
-
 }
 
 
-
+// delete set and free memory
 void  ns_free(natset_t *set){
 
 	free(set->bitarray);
@@ -31,7 +31,7 @@ void  ns_free(natset_t *set){
 }
 
 
-
+// add element to set
 ns_status_t ns_add(natset_t *set, unsigned int element){
 
 	if(set->bitarray == NULL) return NSS_ERROR; 
@@ -66,8 +66,7 @@ ns_status_t ns_add(natset_t *set, unsigned int element){
 }
 
 
-
-
+// remove element from set
 ns_status_t ns_remove(natset_t *set, unsigned int element){
 
 	if(set->bitarray == NULL) return NSS_ERROR; 
@@ -103,9 +102,9 @@ ns_status_t ns_remove(natset_t *set, unsigned int element){
 }
 
 
-
+// put the intersection of set1 and set2 in set1
 ns_status_t ns_cut(natset_t *set1, natset_t *set2){
-	// intersecting set contains all elements that are in both set1 and set2
+	// intersection contains all elements that are in both set1 and set2
 
 	if(set1->bitarray == NULL || set2->bitarray == NULL) return NSS_ERROR; 
 
@@ -165,8 +164,7 @@ ns_status_t ns_cut(natset_t *set1, natset_t *set2){
 }
 	
 
-
-
+// put the union of set1 and set2 in set1
 ns_status_t ns_join(natset_t *set1, natset_t *set2){
 // union contains all elements that are in s1 or s2 
 
