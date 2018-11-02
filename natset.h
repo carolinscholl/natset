@@ -16,3 +16,4 @@ ns_status_t ns_add(natset_t *set, unsigned int element);
 ns_status_t ns_remove(natset_t *set, unsigned int element);
 ns_status_t ns_cut(natset_t *set1, natset_t *set2);
 ns_status_t ns_join(natset_t *set1, natset_t *set2);
+ns_status_t print_set(natset_t *set);

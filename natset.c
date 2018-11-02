@@ -1,18 +1,23 @@
 #include "natset.h"
 #include <stdlib.h>	 
+#include <stdio.h>
 
 
-// initialise a set
+// Function initialises the structure that the parameter set points to 
+// as an empty set that accepts elements between 0 and (at least) largest. 
 ns_status_t ns_init(natset_t *set, unsigned int largest){
 
-	unsigned int size = largest/8 +1; 
+	// compute how many bytes we need to store values between 0 and largest
+	unsigned int n_bytes = largest/8 +1; 
 
-	set->array_size = size; 
-	set->bitarray = calloc(size, sizeof(uint8_t));
-	// calloc allocates memory and initiliases it with zeros
+	// set the size
+	set->array_size = n_bytes; 
+
+	// allocate the needed bytes
+	set->bitarray = calloc(n_bytes, sizeof(uint8_t));
 
 	// Just to be safe we set everything to zero manually 
-	for(unsigned int i=0;i<size; i++){
+	for(unsigned int i=0;i<n_bytes; i++){
 		set->bitarray[i]=0; 
 	}
 
@@ -26,16 +31,19 @@ ns_status_t ns_init(natset_t *set, unsigned int largest){
 void  ns_free(natset_t *set){
 
 	free(set->bitarray);
-	set->bitarray = NULL; 
-	// After freeing memory, pointer gets assigned symbolic value NULL
+	set->bitarray = NULL; // pointer gets assigned symbolic value NULL
 }
 
 
-// add element to set
+// Function adds element parameter to the set. If set is not large enough yet 
+// (i.e. does not have enough bytes reserved yet), it first adapts the size of the set. 
+
 ns_status_t ns_add(natset_t *set, unsigned int element){
 
+	// if set does not exist abort
 	if(set->bitarray == NULL) return NSS_ERROR; 
 
+	// if largest value is out of the range of the reserved bytes, we need to re-allocate memory
 	if ((element/8 +1) > set->array_size)
 	{
 		unsigned int newsize = element/8 +1; 
@@ -46,37 +54,40 @@ ns_status_t ns_add(natset_t *set, unsigned int element){
 			}
 	}
 
-	// Get position of element in bit array
+	// Get index of byte-array that the element needs to be stored in
 	unsigned int fieldindex = element/8;
+	// get bit position in that byte
+	unsigned int bitposition = element%8;
 
-	// get bit position
-	unsigned int bitposition = element%8 +1;
-
+	// compute the decimal value that the element represents; mind that 0 gets the first bit!
+	// e.g. 0 -> 0000 0001 -> decimal value 1
+	// e.g. 2 -> 0000 0100 -> decimal value 3
 	unsigned int decimalvalue=1;
 	for(unsigned int i = 0; i<bitposition; i++){
 		decimalvalue = decimalvalue*2;
+
 	} // loop computes 2^element
 
+	// add this decimal value to the respective byte
 	set->bitarray[fieldindex] += decimalvalue; 
 
-
-	if(set->bitarray == NULL) return NSS_ERROR; 
-	else return NSS_OK;
-
+	return NSS_OK;
 }
 
 
-// remove element from set
+// Function removes the element indicated by the parameter element from the set. 
+// If element is not in set, set remains unchanged. 
 ns_status_t ns_remove(natset_t *set, unsigned int element){
 
+	// if set does not exist abort
 	if(set->bitarray == NULL) return NSS_ERROR; 
 
 	// If element is outside of initialised range, it is not in the set anyways: do nothing and return
 	if ((element/8 +1) > set->array_size){		
-	return NSS_OK; 									
+		return NSS_OK; 									
 	}
 
-	// find index of array where to-be-removed element is
+	// find index of byte array where to-be-removed element is
 	unsigned int fieldindex = element/8;
 
 	// get bit position 
@@ -84,7 +95,6 @@ ns_status_t ns_remove(natset_t *set, unsigned int element){
 
 	// compute decimal value of that position (pow)
 	unsigned int decimalvalue=1;
-	
 	for(unsigned int i = 0; i<bitposition; i++){
 		decimalvalue=decimalvalue*2;
 	} 
@@ -96,16 +106,15 @@ ns_status_t ns_remove(natset_t *set, unsigned int element){
 
 	// 	else do nothing
 
-	if(set->bitarray == NULL) return NSS_ERROR; 
-	else return NSS_OK;
-
+	return NSS_OK;
 }
 
 
-// put the intersection of set1 and set2 in set1
+// Function puts the intersection of set1 and set2 in set1
 ns_status_t ns_cut(natset_t *set1, natset_t *set2){
 	// intersection contains all elements that are in both set1 and set2
 
+	// if one of the sets does not exist, abort
 	if(set1->bitarray == NULL || set2->bitarray == NULL) return NSS_ERROR; 
 
 	unsigned int numbertestbits;
@@ -159,15 +168,15 @@ ns_status_t ns_cut(natset_t *set1, natset_t *set2){
 		}
 	}
 
-	if(set1->bitarray == NULL || set2->bitarray == NULL) return NSS_ERROR; 
-	else return NSS_OK;
+	return NSS_OK;
 }
 	
 
-// put the union of set1 and set2 in set1
+// Function puts the union of set1 and set2 in set1.
 ns_status_t ns_join(natset_t *set1, natset_t *set2){
 // union contains all elements that are in s1 or s2 
 
+	// if one of the sets does not exist, abort
 	if(set1->bitarray == NULL || set2->bitarray == NULL) return NSS_ERROR; 
 
 	unsigned int numbertestbits;
@@ -175,8 +184,7 @@ ns_status_t ns_join(natset_t *set1, natset_t *set2){
 	unsigned int bitposition;
 	unsigned int decimalvalue; 
 
-// If bit array of set2 is larger or the same size as set1, add the missing bytes to set1 
-
+	// If bit array of set2 is larger or the same size as set1, add the missing bytes to set1 
 	if(set1->array_size <= set2->array_size){
 		numbertestbits = set2->array_size*8;
 
@@ -198,9 +206,8 @@ ns_status_t ns_join(natset_t *set1, natset_t *set2){
 		}
 	} 
 
-/* If bit array of set2 is smaller than set1, check until the end of set1
-	In this case no new memory has to be allocated because all bits that 1 in set1 belong to union*/
-	
+	// If bit array of set2 is smaller than set1, check until the end of set1.
+	// In this case no new memory has to be allocated because all bits that 1 in set1 belong to union.
 	if(set2->array_size < set1->array_size){
 		numbertestbits = set1->array_size*8;
 
@@ -220,10 +227,44 @@ ns_status_t ns_join(natset_t *set1, natset_t *set2){
 		}	
 	}
 
-	if(set1->bitarray == NULL || set2->bitarray == NULL) return NSS_ERROR; 
-	else return NSS_OK;
+	return NSS_OK;
 }
 
 
+ns_status_t print_set(natset_t *set){
 
+		// if set does not exist, abort
+		if(set == NULL){
+			printf("Set does not exist.\n");
+			return NSS_ERROR;
+		}
+
+		// get how many bytes we have to check for elements
+		int length_bitarry = set->array_size;
+		
+		printf("Elements in set: ");
+
+		// for each of these bytes
+		for(unsigned int i=0;i<length_bitarry; i++){ 
+			// most significant bit of each byte is 128 because 0 gets 1st bit
+			int decimalvalue = 128; 
+			// save the decimal value that is saved in the array
+			int left = set->bitarray[i];
+			// iterate over it from the last element
+			for(int bit=7; bit>=0; bit--){ 	
+				// if the remaining value is larger than the decimal value of the current bit
+				if(left >= decimalvalue){
+					// bit is in set -> print it
+					printf("%d ", bit+i*8);
+					// subtract it from remaining value
+					left-=decimalvalue;
+				}
+				// compute value of next bit to the right
+				decimalvalue-=decimalvalue/2;
+			}
+		}
+		printf("\n");	
+
+		return NSS_OK;
+}
 
