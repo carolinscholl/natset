@@ -1,7 +1,7 @@
 # natset
 
 Basic functions for a set of natural numbers in C. 
-Natural numbers are simply represented as bits in a very memory-efficient way. The n^th bit represents natural number n (starting with 0): if the bit is set to 1, the number is part of the set, if it is 0, it is not. The main data structure for the set is an array of bytes, so each byte can represent 8 natural numbers. 
+Natural numbers are simply represented as bits in a very memory-efficient way. The $n^{th}$ bit represents natural number n (starting with 0): if the bit is set to 1, the number is part of the set, if it is 0, it is not. The main data structure for the set is an array of bytes, so each byte can represent 8 natural numbers. 
 
 E.g. the first byte can take numbers ranging from 0 to 7:
 
